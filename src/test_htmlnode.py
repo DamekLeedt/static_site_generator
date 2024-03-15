@@ -19,6 +19,23 @@ class TestLeafNode(unittest.TestCase):
         node2 = '<a href="https://www.google.com">Click me!</a>'
         self.assertEqual(node, node2)
 
+        node = LeafNode(None, "This line has no tag.").to_html()
+        node2 = "This line has no tag."
+        self.assertEqual(node, node2)
+
+        node = ParentNode(
+            "p",
+            [
+                LeafNode("b", "Bold text"),
+                LeafNode(None, "Normal text"),
+                LeafNode("i", "italic text"),
+                LeafNode(None, "Normal text"),
+            ],
+        ).to_html()
+        node2 = "<p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>"
+        self.assertEqual(node, node2)
+
+
 
 if __name__ == "__main__":
     unittest.main()
