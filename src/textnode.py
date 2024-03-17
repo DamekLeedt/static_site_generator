@@ -5,4 +5,4 @@ class TextNode():
         self.url = url
 
     def __repr__(self):
-        return f"TextNode({self.text}, {self.text_type}, {self.url})"
+        return f"TextNode(\"{self.text}\", {self.text_type}{", " + str(self.url) if self.url else ""})"
