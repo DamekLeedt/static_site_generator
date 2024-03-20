@@ -5,8 +5,25 @@ import re
 def main():
     text_node = TextNode("This is a text node", "bold")
     node = TextNode("This is text with a `code block` word", "text")
-    print(join_list(text_to_textnodes("This is **text** with an *italic* word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)")))
-          
+    markdown_to_html_node("""This is **bolded** paragraph
+
+This is another paragraph with *italic* text and `code` here
+This is the same paragraph on a new line
+
+* This is an unordered list
+* with items
+                          
+                          1. This is an ordered list
+                          2. with items""")
+    
+    #block_to_block_type(" ###### Penis")
+    #block_to_block_type("""```penis   f asdf a sdf asd fa```""")
+    #block_to_block_type(" > well ive had the most marvelous day i must tell you")
+    #block_to_block_type("""- penis\n* or maybe two?\n-perhaps... even three?""")
+    #block_to_block_type("1. hi\n2. hi\n3.")
+
+    #print(heading_block_to_html("### Test"))
+        
 def text_node_to_html_node(text_node:TextNode):
     if text_node.text_type not in ["text", "bold", "italic", "code", "link", "image"]:
         raise Exception("Not a valid text type.")
@@ -96,5 +113,121 @@ def text_to_textnodes(text):
     old_nodes = split_nodes_delimiter(old_nodes, "*", "italic")
     old_nodes = split_nodes_delimiter(old_nodes, "`", "code")
     return old_nodes
+
+def markdown_to_blocks(markdown):
+    if not markdown:
+        raise ValueError("does not accept empty string")
+    block_list = []
+    temp = []
+    for string in markdown.split("\n"):
+        string = string.lstrip()
+        #print("HI " + string)
+        if string:
+            #print(f"BUILDING... {temp} + {string} ({bool(string)})")
+            temp.append(string.strip())
+        else:
+            #print(f"APPENDING... {temp}")
+            block_list.append("\n".join(temp))
+            temp = []
+    if temp:
+        block_list.append("\n".join(temp))
+    #print(block_list)
+    return block_list
+
+def is_ordered_list(block):
+    result = re.findall(r"(?m)^[1-9][0-9]*[.]", block)
+    if not result:
+        return False
+    if len(result) == 0:
+        if result[0] == "1.":
+            return True
+        return False
+    results = [int(re.findall(r"[1-9][0-9]*", string)[0]) for string in result]
+    prev = results[0]
+    for num in results[1:]:
+        # print(f"{prev} + 1 = {num} ? {prev + 1 == num}")
+        if num != prev + 1:
+            return False
+        prev = num
+    return True
+
+def block_to_block_type(block:str):
+    if re.findall(r"^#{1,6} \w", block):
+        print("heading")
+        return "heading"
+    if re.findall(r"^```[\S\s]+\b```", block):
+        print("code")
+        return "code"
+    if re.findall(r"^>", block):
+        print("quote")
+        return "quote"
+    if re.findall(r"^[*|-]", block):
+        print("unordered list")
+        return "unordered list"
+    if is_ordered_list(block):
+        print("ordered list")
+        return "ordered list"
+    return "paragraph"
+
+def heading_block_to_html(block:str):
+    size = str(len(re.findall(r"#{1,6} ", block)[0].rstrip()))
+    leafnode = LeafNode("h" + size, block.lstrip("# "))
+    #print(leafnode.to_html())
+    return leafnode
+
+def code_block_to_html(block:str):
+    parentnode = ParentNode("pre", LeafNode("code", block.strip("`")))
+    #print(parentnode.to_html())
+    return parentnode
+
+def ordered_list_to_html(block:str):
+    leafnode_list = []
+    for line in block.split("\n"):
+        leafnode_list.append(line.lstrip("1234567890. "))
+    parentnode = ParentNode("ol", [LeafNode("li", leafnode) for leafnode in leafnode_list])
+    #print(parentnode.to_html())
+    return parentnode
+
+def unordered_list_to_html(block:str):
+    print(block)
+    leafnode_list = []
+    for line in block.split("\n"):
+        if line:
+            leafnode_list.append(line.lstrip("*- "))
+    parentnode = ParentNode("ul", [LeafNode("li", leafnode) for leafnode in leafnode_list])
+    #print(parentnode.to_html())
+    return parentnode
+
+def quote_to_html(block:str):
+    leafnode = LeafNode("blockquote", block)
+    #print(leafnode.to_html())
+    return leafnode
+
+def paragraph_to_html(block:str):
+    leafnode = LeafNode("p", block)
+    #print(leafnode.to_html())
+    return leafnode
+
+def markdown_to_html_node(markdown:str):
+    block_list = markdown_to_blocks(markdown)
+    child_list = []
+    for block in block_list:
+        btype = block_to_block_type(block)
+        if btype == "paragraph":
+            child_list.append(paragraph_to_html(block))
+        if btype == "ordered list":
+            child_list.append(ordered_list_to_html(block))
+        if btype == "unordered list":
+            child_list.append(unordered_list_to_html(block))
+        if btype == "code":
+            child_list.append(code_block_to_html(block))
+        if btype == "quote":
+            child_list.append(quote_to_html(block))
+        if btype == "heading":
+            child_list.append(heading_block_to_html(block))
+    parentnode = ParentNode("div", [node for node in child_list])
+    print(parentnode.to_html())
+    return parentnode
+
 
 main()
