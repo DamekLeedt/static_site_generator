@@ -1,28 +1,12 @@
 from textnode import TextNode
 from htmlnode import *
+from shutil import copytree, rmtree
+import os
 import re
 
 def main():
-    text_node = TextNode("This is a text node", "bold")
-    node = TextNode("This is text with a `code block` word", "text")
-    markdown_to_html_node("""This is **bolded** paragraph
-
-This is another paragraph with *italic* text and `code` here
-This is the same paragraph on a new line
-
-* This is an unordered list
-* with items
-                          
-                          1. This is an ordered list
-                          2. with items""")
+    generate_page("content/index.md", "template.html", "public/index.html")
     
-    #block_to_block_type(" ###### Penis")
-    #block_to_block_type("""```penis   f asdf a sdf asd fa```""")
-    #block_to_block_type(" > well ive had the most marvelous day i must tell you")
-    #block_to_block_type("""- penis\n* or maybe two?\n-perhaps... even three?""")
-    #block_to_block_type("1. hi\n2. hi\n3.")
-
-    #print(heading_block_to_html("### Test"))
         
 def text_node_to_html_node(text_node:TextNode):
     if text_node.text_type not in ["text", "bold", "italic", "code", "link", "image"]:
@@ -189,7 +173,7 @@ def ordered_list_to_html(block:str):
     return parentnode
 
 def unordered_list_to_html(block:str):
-    print(block)
+    # print(block)
     leafnode_list = []
     for line in block.split("\n"):
         if line:
@@ -226,8 +210,35 @@ def markdown_to_html_node(markdown:str):
         if btype == "heading":
             child_list.append(heading_block_to_html(block))
     parentnode = ParentNode("div", [node for node in child_list])
-    print(parentnode.to_html())
+    # print(parentnode.to_html())
     return parentnode
 
+def extract_title(markdown):
+    header = re.findall(r"^[#] ", markdown)
+    if not header:
+        #print("shit")
+        raise Exception("No title.")
+    #print("piss :)")
+    return markdown.split("\n")[0].lstrip("# ")
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path}")
+    text = open(from_path, encoding="utf-8").read()
+    template = open(template_path).read()
+
+    markdown = markdown_to_html_node(text).to_html()
+    title = extract_title(text)
+    template = template.replace("{{ Title }}", title)
+    template = template.replace("{{ Content }}", markdown)
+
+    path = "/".join(dest_path.split("/")[:-1])
+    if len(path) > 1 and not os.path.exists(path):
+        os.makedirs(path)
+    open(dest_path, 'w').write(template)
+    
+def copy_dir(path_to_copy, dir_to_paste):
+    if os.path.exists(dir_to_paste):
+        rmtree(dir_to_paste)
+    copytree(path_to_copy, dir_to_paste)
 
 main()
