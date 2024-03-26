@@ -5,7 +5,8 @@ import os
 import re
 
 def main():
-    generate_page("content/index.md", "template.html", "public/index.html")
+    # generate_page("content", "template.html", "public")
+    generate_page_recursive("content", "template.html", "public")
     
         
 def text_node_to_html_node(text_node:TextNode):
@@ -235,6 +236,35 @@ def generate_page(from_path, template_path, dest_path):
     if len(path) > 1 and not os.path.exists(path):
         os.makedirs(path)
     open(dest_path, 'w').write(template)
+
+def generate_page_recursive(dir_path_content, template_path, dest_dir_path):
+    current_path = dir_path_content.split("/")
+    # print(current_path)
+    for path in os.listdir(dir_path_content):
+        current_path.append(path)
+        path_str = "/".join(current_path)
+        print(current_path)
+        if os.path.isfile(path_str):
+            print(path_str + " is a " + path_str.split(".")[1] + " file.")
+            if path_str.split(".")[1] == "md":
+                generate_page(path_str, template_path, dest_dir_path + f"/{"/".join(current_path[1:]).split(".")[0]}.html")
+        else:
+            print(path_str + " is a folder.")
+            generate_page_recursive(path_str, template_path, dest_dir_path)
+        current_path.pop()  
+
+def crawl_path(dir, current_path:list=[]):
+    current_path = [dir]
+    for path in os.listdir(dir):
+        current_path.append(path)
+        path_str = "/".join(current_path)
+        # print(current_path)
+        if os.path.isfile(path_str):
+            print(path_str + " is a file.")
+        else:
+            print(path_str + " is a folder.")
+            crawl_path(path_str, current_path)
+        current_path.pop()  
     
 def copy_dir(path_to_copy, dir_to_paste):
     if os.path.exists(dir_to_paste):
